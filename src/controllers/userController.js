@@ -1,6 +1,6 @@
 require('dotenv').config();
 
-const asyncHandler = require('../middleware/asyncHandler');
+const { query } = require('express');
 const { clearCookies } = require('../middleware/authMiddleware');
 
 const ResetTokenService = require('../services/authService');
@@ -103,6 +103,7 @@ const forgotPassword = async (req, res) => {
 const resetPassword = async (req, res) => {
 
     const { token, newPassword } = req.body;
+
     // Verify token details
     let [success, data, message, metadata] = await ResetTokenService.verifyUserToken(token)
     if (!success) {
@@ -123,20 +124,21 @@ const resetPassword = async (req, res) => {
 const submitReport = async (req, res) => {
 
     const { id } = req.user;
+
     const { description, customer, sbu, solution, module, severity, dueDate } = req.body;
-    let newReport = { 
-        description, 
+    let newReport = {
+        description,
         customer,
         sbu,
         solution,
         module,
         severity,
         dueDate,
-        reporter: id 
-    
+        reporterId: id
+        // attachments
     };
 
-    let [success, data, message, metadata] = await new IssueService.submitNewReport(newReport);
+    let [success, data, message, metadata] = await IssueService.submitNewReport(newReport);
 
     if (success) {
         // Return as JSON the response from IssueService submit new report method
@@ -149,11 +151,29 @@ const submitReport = async (req, res) => {
 // To get all reports/issues submitted on the system
 const getReports = async (req, res) => {
 
-    const { id } = req.user;
+    // const { id } = req.user;
 
-    let [success, data, message, metadata] = await new IssueService().findAllPaginated();
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    let paginationOptions = { page, limit };
+    const filter = {} // Define an empty filter object
+
+    // Add filtering based on query parameters
+    if (req.query.customer) {
+        filter.customer = req.query.customer;
+    }
+    if (req.query.sbu) {
+        filter.sbu = req.query.sbu;
+    }
+    if(req.query.severity){
+        filter.severity = req.query.severity;
+    }
+
+    let [success, data, message, metadata] = await new IssueService().findAllByConditionPaginated(filter, paginationOptions);
     if (success) {
-        return responseHandler(res, message, metadata?.status || 200, true, { reports: data });
+        let { data: returnedData, currentPage, totalCount, totalPages } = data;
+
+        return responseHandler(res, message, metadata?.status || 200, true, { reports: returnedData, metadata: { totalCount, totalPages, currentPage } });
     }
     return responseHandler(res, message, metadata?.status || 400);
 }
@@ -164,7 +184,7 @@ const getUserReports = async (req, res) => {
     const { id } = req.user;
 
     // Find all submitted issues by user
-    let [success, data, message, metadata] = await new IssueService().findAllByConditionPaginated({ reporter: id});
+    let [success, data, message, metadata] = await new IssueService().findAllByConditionPaginated({ reporter: id });
     if (success) {
         return responseHandler(res, message, metadata?.status || 200, true, { reports: data });
     }
@@ -187,7 +207,7 @@ const getUserNotifications = async (req, res) => {
 
     const { id } = req.user;
 
-    let [success, data, message, metadata] = await new NotificationService().findAllByConditionPaginated( {reporter: id });
+    let [success, data, message, metadata] = await new NotificationService().findAllByConditionPaginated({ recipient: id });
     if (success) {
         return responseHandler(res, message, metadata?.status || 200, true, { notifications: data });
     }

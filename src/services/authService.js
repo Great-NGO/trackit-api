@@ -1,5 +1,6 @@
 const logger = require("../config/logger");
 const ResetToken = require("../models/resetTokenModel");
+const log = require("../utils/logger");
 const { generateResetJWT, verifyResetJWT } = require("../utils/tokenEncryption");
 const { translateError } = require("../utils/translateError");
 
@@ -18,6 +19,7 @@ class ResetTokenService {
             // Generate a reset JWT token
             const token = generateResetJWT(userId);
             // Create a reset token document in the database
+            log("user id ", userId);
             let resetToken = await ResetToken.create({ userId, token, type });
 
             if (resetToken) {
@@ -27,7 +29,7 @@ class ResetTokenService {
         } catch (error) {
             // Handle errors
             let errResponse = translateError(error, `creating reset token link for ${type}`)
-            logger.error("Error from Reset-token service create method", errResponse);
+            logger.error("Error from Reset-token service create method", error);
             return errResponse;
         }
     }
@@ -37,7 +39,9 @@ class ResetTokenService {
      * @param {string} token - The reset token to verify.
      * @returns {Promise<[boolean, any | null, string, { status: number, metadata?: any}]>} A promise resolving to a tuple indicating the success of the verification and related data.
      */
-    static async verifyUserToken(token = "") {
+    static async verifyUserToken(token) {
+
+        // log("Token ", token);
         try {
             // Define an aggregation pipeline to lookup the user associated with the token
             const pipeline = [
@@ -93,9 +97,10 @@ class ResetTokenService {
             // Return a success response with the user data and token details
             return [true, returnedData, 'Reset password link is valid', { status: 200 }];
         } catch (error) {
+            logger.error("Verifying reset token service error for user ", error);
             // Handle errors
             let errResponse = translateError(error, "verifying token.");
-            logError("Verifying reset token (Reset token service)", errResponse);
+            log("tr ", errResponse);
             return errResponse;
         }
     }

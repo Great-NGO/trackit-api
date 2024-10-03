@@ -1,6 +1,6 @@
 
 const { body, check } = require("express-validator");
-const { default: AdminService } = require("../services/adminService");
+const AdminService = require("../services/adminService");
 const UserService = require("../services/userService");
 
 
@@ -87,7 +87,7 @@ const updateAdminPasswordValidator = [
 const resetPasswordValidator = [
 
     body("token", "Token is required").trim().notEmpty(),
-    body("email", "Email is required").trim().notEmpty().isEmail(),
+    // body("email", "Email is required").trim().notEmpty().isEmail(),
     check("newPassword", "New Password can not be empty").trim().notEmpty(),
     check("newPassword", "New Password must be atleast 8 characters").isLength({ min: 8 }),
     check("confirmPassword", "Please confirm your new password").trim().notEmpty(),

@@ -16,8 +16,8 @@ const sendResetPwdMail = async (email, firstName, token, role = "User") => {
             url1 = `https://trackit-web.vercel.app/reset-password?token=${token}`;
             url2 = `https://trackit-web.vercel.app/admin/reset-password?token=${token}`;
         } else {
-            url1 = `http://localhost:4000/reset-password?token=${token}`;
-            url2 = `http://localhost:4000/admin/reset-password?token=${token}`;
+            url1 = `http://localhost:5173/reset-password?token=${token}`;
+            url2 = `http://localhost:5173/admin/reset-password?token=${token}`;
         }
 
         log(url1)
@@ -39,7 +39,7 @@ const sendResetPwdMail = async (email, firstName, token, role = "User") => {
             mail = {
                 from: MAILING_EMAIL,
                 to: email,
-                subject: "Reset your password",
+                subject: "TRACKIT - Reset your password",
                 html: `
                Dear <strong>${firstName}</strong>,
                <p>Having an issue with remembering your password? Well don't worry! </p>
@@ -64,18 +64,58 @@ const sendResetPwdMail = async (email, firstName, token, role = "User") => {
         const result = await transporter.sendMail(mail);
         log("The result ", result);
         if (result.accepted) {
-            return [true, null, "Reset Password link sent successfully.", { status: 200}];
+            return [true, "Reset Password link sent successfully.", { status: 200 }];
         } else {
-            return [ false, null, "Something went wrong in sending reset password link", { status: 400, code:result.code} ];
+            return [false, "Something went wrong in sending reset password link", { status: 400, code: result.code }];
         }
     } catch (error) {
-        logger.error(error);
+        log("The error from sendresetpwdmail util function", error);
+        logger.error("The error from sendresetpwdmail util function", error);
         return translateError(error, "reset password link.")
     }
 };
 
+const sendNotificationMail = async (email, firstname) => {
+    try {
+        const transporter = nodemailer.createTransport({
+            service: "gmail",
+            auth: {
+                user: MAILING_EMAIL,
+                pass: MAILING_PASSWORD,
+            },
+            tls: {
+                rejectUnauthorized: false,
+            },
+        });
 
-module.exports = { 
-    sendResetPwdMail, 
- 
+        let mail = {
+            from: "TRACKIT",
+            to: email,
+            subject: "Notification of new issue report - TRACKIT",
+            html: `
+             Hi <strong>${firstname}</strong>,
+             <p> You have a new issue report on your Trackit account. Please check it out. </p>
+             <h3> Thank you for using Trackit, and have a great day! </h3>
+          `,
+        };
+
+        const result = await transporter.sendMail(mail);
+        log("The result from sending ", result);
+
+        if (result.accepted) {
+            return [true, "Notification mail sent successfully.", { status: 200 }];
+        } else {
+            return [false, "Something went wrong in sending notification mail.", { status: 400, code: result.code }];
+        }
+
+    } catch (error) {
+        logger.error(error);
+        return translateError(error, "sending notification email.");
+
+    }
+};
+
+module.exports = {
+    sendResetPwdMail,
+    sendNotificationMail
 };

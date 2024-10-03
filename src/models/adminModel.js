@@ -6,8 +6,8 @@ const { Schema } = mongoose;
 
 const AdminSchema = new Schema(
     {
-        firstname: { type: String, required: true, trim: true },
-        lastname: { type: String, required: true, trim: true },
+        firstName: { type: String, required: true, trim: true },
+        lastName: { type: String, required: true, trim: true },
         email: {
             type: String,
             trim: true,

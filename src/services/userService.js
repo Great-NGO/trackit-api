@@ -1,8 +1,10 @@
 
-const comparePassword = require("../utils/passwordEncryption");
+const { comparePassword, encryptPassword } = require("../utils/passwordEncryption");
 const logger = require("../config/logger");
 const BaseRepository = require("./baseRepoService")
-const User = require("../models/userModel")
+const User = require("../models/userModel");
+const ResetToken = require("../models/resetTokenModel");
+const { translateError } = require("../utils/translateError");
 
 /** User Service Class - Manage every User related operation */
 class UserService extends BaseRepository {
@@ -71,6 +73,7 @@ class UserService extends BaseRepository {
             return [true, null, "Failed to reset Users password", { status: 404 }];
 
         } catch (error) {
+            logger.error("Reset pwd error ", error);
             const errResponse = translateError(error, "resetting users password.");
             return errResponse;
         }

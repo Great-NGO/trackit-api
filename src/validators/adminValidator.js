@@ -39,8 +39,8 @@ const addStaffValidator = [
         }
         return true;    //If no error
     }),
-
-    body("dob", "Enter Staffs DOB").isISO8601().toDate()
+    body("age", "Enter Staffs Age").trim().isNumeric()
+    // body("dob", "Enter Staffs DOB").isISO8601().toDate()
 
 ];
 

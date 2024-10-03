@@ -1,15 +1,20 @@
 require('dotenv').config();
 const express = require('express');
-const { getUser, userLogin, getUserProfile, forgotPassword, getReports, getUserReports, getUserNotifications, getNotification, deleteAllNotifications } = require('../controllers/userController');
+const { getUser, userLogin, getUserProfile, forgotPassword, getReports, getUserReports, getUserNotifications, getNotification, deleteAllNotifications, submitReport, logout } = require('../controllers/userController');
 const { requireSignin, isAdmin } = require('../middleware/authMiddleware');
 const { validateRequest } = require('../middleware/validationMiddleware');
 const { loginValidator, forgotPasswordValidator, resetPasswordValidator, updatePasswordValidator } = require('../validators/authRelatedValidations');
-const { resetPassword, updatePassword } = require('../services/userService');
+const { resetPassword, updatePassword } = require('../controllers/userController');
 const asyncHandler = require('../middleware/asyncHandler');
+const { newIssueValidator } = require('../validators/issueValidations');
 
 const router = express.Router();
 
 router.post('/login', loginValidator, validateRequest, asyncHandler(userLogin));
+
+router.post('/logout', asyncHandler(logout));
+
+router.get('/logout', asyncHandler(logout));
 
 // To get a users detail
 router.get('/user/:id', requireSignin, asyncHandler(getUser));
@@ -25,7 +30,7 @@ router.put("/reset-password", resetPasswordValidator, validateRequest, asyncHand
 router.put('/edit-password', requireSignin, updatePasswordValidator, validateRequest, asyncHandler(updatePassword));
 
 // Submit new issue report
-// router.post('/submit-issue', requireSignin, newIssueValidator, validateRequest, asyncHandler(submitReport));
+router.post('/submit-issue', requireSignin, newIssueValidator, validateRequest, asyncHandler(submitReport));
 
 // Get all the reports submitted - can be filtered
 router.get('/issue-reports', requireSignin, asyncHandler(getReports));

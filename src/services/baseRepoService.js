@@ -98,7 +98,7 @@ class BaseRepository {
     }
 
     // Find all documents by a query condition.
-    async findAllByCondition(query) {
+    async findAllByCondition(query={}) {
         try {
             const data = await this.model.find(query);
             return [true, data, 'Data retrieved successfully', { status: 200 }];
@@ -110,7 +110,7 @@ class BaseRepository {
     }
 
     // Find all documents with pagination support.
-    async findAllPaginated(paginationOptions) {
+    async findAllPaginated(paginationOptions={}) {
         try {
             const { page = 1, limit = this.defaultPageSize } = paginationOptions || {}
             const totalCount = await this.model.countDocuments();
@@ -131,7 +131,7 @@ class BaseRepository {
     }
 
     // Find all documents by a query condition with pagination support.
-    async findAllByConditionPaginated(query, paginationOptions) {
+    async findAllByConditionPaginated(query={}, paginationOptions={}) {
         try {
             const { page = 1, limit = this.defaultPageSize } = paginationOptions || {};
             const totalCount = await this.model.countDocuments(query);

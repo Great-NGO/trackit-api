@@ -9,6 +9,8 @@ const User = require("../models/userModel");
 const ResetTokenService = require("./authService");
 const { sendResetPwdMail } = require("../utils/sendMail");
 const mongoose = require("mongoose");
+const { translateError } = require("../utils/translateError");
+const log = require("../utils/logger");
 
 /** Admin Service Class - Manage every Admin related operation */
 class AdminService extends BaseRepository {
@@ -32,12 +34,12 @@ class AdminService extends BaseRepository {
 
     static async login(email, password) {
         try {
-            const Admin = await Admin.findOne({ email }).lean();  //Use the lean method to convert response to an object, so we dont return back the mongoose related info (cluttered data)
+            const admin = await Admin.findOne({ email }).lean();  //Use the lean method to convert response to an object, so we dont return back the mongoose related info (cluttered data)
 
-            if (Admin && await comparePassword(password, Admin.password)) {
-                const { password, ...AdminWithoutPassword } = Admin;  //Destructure password from Admin and spread the remaining properties of Admin into new variable (object) called AdminWithoutPassword
+            if (admin && await comparePassword(password, admin.password)) {
+                const { password, ...adminWithoutPassword } = admin;  //Destructure password from Admin and spread the remaining properties of Admin into new variable (object) called AdminWithoutPassword
 
-                return [true, AdminWithoutPassword, "Admin Login Successful", { status: 200 }];
+                return [true, adminWithoutPassword, "Admin Login Successful", { status: 200 }];
             }
             return [false, null, "Incorrect Email/Password", { status: 400 }];
 
@@ -53,8 +55,9 @@ class AdminService extends BaseRepository {
         try {
             const countAdmin = await Admin.countDocuments();
 
-            if (countAdmin > 0) {
-                return [false, null, "Admin already registered", { status: 400 }];
+            // if (countAdmin > 0) {
+            if (countAdmin > 1) {
+                return [false, null, "Admin already exists", { status: 400 }];
             }
 
             let newAdmin = {
@@ -67,7 +70,9 @@ class AdminService extends BaseRepository {
 
             const createdData = await Admin.create(newAdmin);
             if (createdData) {
-                return [true, createdData, 'Admin registered successfully', { status: 201 }];
+
+                const { password, ...adminWithoutPassword } = createdData.toJSON();  //Destructure password from Admin and spread the remaining properties of Admin into new variable (object) called AdminWithoutPassword
+                return [true, adminWithoutPassword, 'Admin registered successfully', { status: 201 }];
             }
 
             return [false, null, "Failed to register new admin", { status: 400 }];
@@ -79,7 +84,7 @@ class AdminService extends BaseRepository {
 
     }
     /** Admin Service - Add/Register New User/Staff */
-    static async addUser({ firstName, lastName, email, phoneNumber, gender, dob }) {
+    static async addUser({ firstName, lastName, email, phoneNumber, gender, age }) {
 
         const session = await mongoose.startSession();
         session.startTransaction()
@@ -96,13 +101,15 @@ class AdminService extends BaseRepository {
                 password: hashedPassword,
                 phoneNumber,
                 gender,
-                dob
+                age
             }
 
-            const createdData = await User.create(newUser, { session });
+            // Pass an array for create method
+            const createdData = await User.create([newUser], { session });
 
+            log("created data ", createdData);
             // Send Email link to them (The user added to the system and provide them a link to reset their password)
-            let [resetTokenSuccess, resetTokenData] = await new ResetTokenService.create(createdData._id, "Admin");
+            let [resetTokenSuccess, resetTokenData] = await ResetTokenService.create(createdData[0]._id, "User");
             if (!resetTokenSuccess) {
             // End session and abort transaction - undoing every db commit/write
                 await session.abortTransaction();
@@ -119,7 +126,7 @@ class AdminService extends BaseRepository {
                 return [false, null, mailMessage, { status: 400 }];
             }
 
-            // End session and abort transaction - undoing every db commit/write
+            // Commit transaction and end session
             await session.commitTransaction();
             session.endSession();
 
@@ -127,6 +134,7 @@ class AdminService extends BaseRepository {
 
 
         } catch (error) {
+            logger.error("Error from add staff service method", error);
             // End session and abort transaction - undoing every db commit/write
             await session.abortTransaction();
             session.endSession();

@@ -3,6 +3,8 @@ require('dotenv').config();
 const { clearCookies } = require('../middleware/authMiddleware');
 const AdminService = require('../services/adminService');
 const ResetTokenService = require('../services/authService');
+const IssueService = require('../services/issueService');
+const NotificationService = require('../services/notificationService');
 const UserService = require('../services/userService');
 const log = require('../utils/logger');
 const { responseHandler } = require('../utils/responseHandler');
@@ -25,11 +27,11 @@ const adminRegister = async (req, res) => {
     const { firstName, lastName, email, password } = req.body;
     let newAdmin = { firstName, lastName, email, password };
 
-    let [success, data, message, metadata] = await new AdminService.register(newAdmin);
+    let [success, data, message, metadata] = await AdminService.register(newAdmin);
 
     if (success) {
         // Return as JSON the response from adminservice register method
-        return responseHandler(res, message, metadata?.status || 200, true, { token, admin: data });
+        return responseHandler(res, message, metadata?.status || 200, true, { admin: data });
     }
     return responseHandler(res, message, metadata?.status || 400);
 
@@ -138,8 +140,8 @@ const adminResetPassword = async (req, res) => {
 
 const addUser = async (req, res) => {
 
-    const { firstName, lastName, email, phoneNumber, gender, dob } = req.body;
-    let newUser = { firstName, lastName, email, phoneNumber, gender, dob };
+    const { firstName, lastName, email, phoneNumber, gender, age } = req.body;
+    let newUser = { firstName, lastName, email, phoneNumber, gender, age };
 
     let [success, data, message, metadata] = await AdminService.addUser(newUser);
     
@@ -172,17 +174,36 @@ const adminGetAllUsers = async (req, res) => {
 
 const getAllAdminNotifications = async (req, res) => {
 
-    const { univ_id } = req.user;
+    // const { id } = req.user;
 
-    let [success, data, message, metadata] = await ProgramService.getAllPrograms(univ_id);
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    let paginationOptions = { page, limit};
+    const filter = {} // Define an empty filter object
+
+    if (req.query.actionType) {
+        filter.actionType = req.query.actionType;
+    }
+
+    let [success, data, message, metadata] = await new NotificationService().findAllByConditionPaginated(filter, paginationOptions);
     if (success) {
-        return responseHandler(res, message, metadata?.status || 200, true, { programs: data });
+        let { data: returnedData, currentPage, totalCount, totalPages } = data;
+
+        return responseHandler(res, message, metadata?.status || 200, true, { notifications: returnedData, metadata: { currentPage, totalCount, totalPages } });
     }
     return responseHandler(res, message, metadata?.status || 400);
 }
 
-const adminUpdateIssue = async () => {
+const adminUpdateIssue = async (req, res) => {
 
+    // const { issueId, status, assignee } = req.body;
+    const { issueId, status } = req.body;
+
+    let [success, data, message, metadata] = await new IssueService().update(issueId, {status} );
+    if (success) {
+        return responseHandler(res, "Issue Status updated successfully.", metadata?.status || 200, true, { issue: data })
+    }
+    return responseHandler(res, message, metadata?.status || 400)
 }
 
 const adminGetNotification = async (req, res) => {
@@ -196,51 +217,13 @@ const adminGetNotification = async (req, res) => {
     return responseHandler(res, message, metadata?.status || 400);
 }
 
-const adminDeleteNotification = async () => {
+const adminDeleteNotification = async (req, res) => {
 
 }
 
-const adminDeleteAllNotifications = async () => {
+const adminDeleteAllNotifications = async (req, res) => {
 
 }
-
-const addSession = async (req, res) => {
-    const { session_year } = req.body;
-    const { univ_id } = req.user;
-
-    let sessionService = new SessionService(session_year, univ_id);
-    let [success, data, message, metadata] = await sessionService.addSession();
-    if (success) {
-        return responseHandler(res, message, metadata?.status || 201, true, { session: data });
-    }
-    return responseHandler(res, message, metadata?.status || 400);
-}
-
-// For the Admin to update their session status (ongoing, paused, closed )
-const updateSession = async (req, res) => {
-
-    const { univ_id } = req.user;
-    const { status, session_id } = req.body;     //Admin can update the status of a session
-
-    let [success, data, message, metadata] = await SessionService.updateSessionByIdAndUnivId(session_id, univ_id, status);
-    if (success) {
-        return responseHandler(res, message, metadata?.status || 200, true, { session: data })
-    }
-    return responseHandler(res, message, metadata?.status || 400)
-}
-
-const deleteSession = async (req, res) => {
-    const { session_id } = req.body;
-    const { univ_id } = req.user;
-
-    let [success, data, message, metadata] = await SessionService.deleteSession(session_id, univ_id);
-    if (success) {
-        return responseHandler(res, message, metadata?.status || 200, true);
-    }
-    return responseHandler(res, message, metadata?.status || 400);
-}
-
-
 
 
 module.exports = {
@@ -262,11 +245,6 @@ module.exports = {
     getAllAdminNotifications,
     adminDeleteNotification,
     adminDeleteAllNotifications,
-
-
-    addSession,
-    updateSession,
-    deleteSession,
 
 
 }

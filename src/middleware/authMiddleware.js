@@ -1,6 +1,6 @@
 require('dotenv').config();
 const jwt = require("jsonwebtoken");
-const responseHandler = require('../utils/responseHandler');
+const { responseHandler } = require('../utils/responseHandler');
 const { JWT_SECRET_KEY } = require('../utils/envSecrets');
 const log = require('../utils/logger');
 

@@ -6,8 +6,8 @@ const { Schema } = mongoose;
 
 const UserSchema = new Schema(
     {
-        firstname: { type: String, required: true, trim: true },
-        lastname: { type: String, required: true, trim: true },
+        firstName: { type: String, required: true, trim: true },
+        lastName: { type: String, required: true, trim: true },
         email: {
             type: String,
             trim: true,
@@ -20,6 +20,9 @@ const UserSchema = new Schema(
             trim: true,
             min: [8, "Password must be atleast 8 characters long"],
             max: [1024, "Password is too long"]
+        },
+        age: {
+            type: Number
         },
         dob: {  //Date Of Birth
             type: Date,

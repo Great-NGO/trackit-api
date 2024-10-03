@@ -1,6 +1,7 @@
 const multer = require("multer");
 const logger = require("../config/logger");
 const { translateError } = require("../utils/translateError");
+const log = require("../utils/logger");
 
 // ErrorHandler Middleware
 
@@ -9,6 +10,7 @@ const errorMiddleware = (error, req, res, next) => {
     logger.error(`Error from error handler middleware: ${error}`);
 
     let err = error;    //Clone the error parameter into the err variable
+
     // If error is a multer Error, the status is 400 and the error is the error message
     if (err instanceof multer.MulterError) {
         // Handle Multer errors
@@ -27,7 +29,7 @@ const errorMiddleware = (error, req, res, next) => {
                 err.message = 'Unexpected number of files.';
                 break;
             // any other type of multer error (default)
-            default: 
+            default:
                 err.status = 400;
                 // err.error = err.message;
                 err.message = err.message;
@@ -40,6 +42,9 @@ const errorMiddleware = (error, req, res, next) => {
 
     // Set the HTTP Status code based on the error
     let statusCode = errResponseMetadata?.status || 500;
+    // log("errorMessage middleware ", errorMessage)
+
+    errorMessage == null || errorMessage == undefined ? errorMessage = "Something went wrong" : errorMessage;
 
     return res.status(statusCode).json({
         error: errorMessage || "Internal Server Error.",

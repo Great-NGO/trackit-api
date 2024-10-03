@@ -8,6 +8,7 @@ const asyncHandler = require('../middleware/asyncHandler');
 
 const { loginValidator, forgotPasswordValidator, resetPasswordValidator, updateAdminPasswordValidator } = require('../validators/authRelatedValidations');
 const { adminSignupValidator, addStaffValidator, adminUpdateValidator } = require('../validators/adminValidator');
+const { updateIssueValidator } = require('../validators/issueValidations');
 
 const router = express.Router();
 
@@ -45,7 +46,7 @@ router.get('/admin/users', requireSignin, isAdmin, asyncHandler(adminGetAllUsers
 router.get('/admin/notifications', requireSignin, isAdmin, asyncHandler(getAllAdminNotifications));
 
 // Update an issue (status)
-// router.put('/admin/update-issue', requireSignin, isAdmin, updateIssueValidator, validateRequest, asyncHandler(adminUpdateIssue))
+router.put('/admin/update-issue', requireSignin, isAdmin, updateIssueValidator, validateRequest, asyncHandler(adminUpdateIssue))
 
 // Get Notification by ID
 router.get('/notification/:id', requireSignin, isAdmin, asyncHandler(adminGetNotification));

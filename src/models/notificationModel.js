@@ -4,15 +4,18 @@ const { Schema } = mongoose;
 
 const NotificationSchema = new Schema({
 
-    notificationOwner: { 
-        type: Schema.Types.ObjectId, 
-        required: true
+    recipient: {
+        type: Schema.Types.ObjectId,
+        // required: true
         // ref: "User" 
-
     },
-    notificationType: { 
-        type: Schema.Types.ObjectId, 
-        // ref: "User",
+    recipientType: {
+        type: String,
+        enum: {
+            values: ['Admin', 'User'],
+            message: '{VALUE} is not supported'
+        },
+        required: true,
         default: "Admin"
 
     },
@@ -24,10 +27,10 @@ const NotificationSchema = new Schema({
         },
         required: true
     },
-    issueId: { 
-        type: Schema.Types.ObjectId, 
+    issueId: {
+        type: Schema.Types.ObjectId,
         required: true,
-        ref: "Issue" 
+        ref: "Issue"
     },
     date: {
         type: Date,
@@ -36,14 +39,6 @@ const NotificationSchema = new Schema({
 },
     { timestamps: true }
 );
-
-// Dynamically set reference based on type
-NotificationSchema.pre('save', async function (next) {
-    const userOrAdmin = this.authorType === 'User' ? 'User' : 'Admin';
-    this.constructor.schema.obj.notificationOwner.ref = userOrAdmin;
-    next();
-});
-
 
 const Notification = mongoose.model("Notification", NotificationSchema);
 
